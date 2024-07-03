@@ -13,6 +13,8 @@ library(clipr)
 library(httr)
 library(rvest)
 library(xml2)
+library(usethis)
+library(gert)
 ```
 
 ```{r}
@@ -21,45 +23,9 @@ library(xml2)
 source(file = "qmd_to_md.r")
 ```
 
-```{r}
-usethis::use_git()
-
-## Para começar a usar o git em um projeto que não tem nenhum vinculo com git/github ainda (ou seja quero fazer versionamento de uma pasta)
-```
-
-```{r}
-usethis::use_github()
-
-# Para linkar o github com o projeto que já está sendo versionado pelo git (já tem a abinha git ativada) e aqui ele já cria um repositorio no github mesmo
-```
-
-```{r}
-usethis::git_default_branch()
-
-# pra descobrir qual a branch estamos, por default ele tá criando no master (mas como eu não estou pegando algo do github que ele cria automaticamente um 'main', agora deu certo)
-```
-
-e aparentemente eu posso alterar o default que vai ser criado aqui pelo Rstudio com uma função do usethis [Renaming the default branch (tidyverse.org)](https://www.tidyverse.org/blog/2021/10/renaming-default-branch/)
-
 ------------------------------------------------------------------------
 
 Obsidian Read and Export
-
-```{r}
-#| label: Importing the .md file from obsidian
-# Path to the Markdown file
-obsidian_file <- "literatura_cientifica.md"
-
-# Reading the file
-markdown <- readLines(obsidian_file)
-
-#Getting the Source-id of every journal
-id_table <- str_extract(markdown, "\\(\\s*\\d+\\s*\\)") |> 
-  tibble() |> 
-  drop_na() |> 
-  rename(source_id = "str_extract(markdown, \"\\\\(\\\\s*\\\\d+\\\\s*\\\\)\")") |> 
-   mutate(source_id = as.numeric(str_replace_all(source_id, "[()\\s]", "")))
-```
 
 Read Scopus and Scimago databases
 
@@ -83,13 +49,20 @@ scimago_2023 <- read_delim("data/scimagojr_2023.csv",
 ```{r}
 #| label: read qxmd database
 
-qxmd_2024 <- read_csv("data/qxmd.csv", col_names = FALSE) |>
-  clean_names() |> 
-  mutate(qxmd = TRUE)
+# qxmd_2024 <- read_csv("data/qxmd.csv", col_names = FALSE) |>
+#   clean_names() |> 
+#   mutate(qxmd = TRUE)
 
-scopus_mylist |> 
-  left_join(qxmd_2024, join_by(source_title == x1)) |> 
-  View()
+# Read the entire file
+qxmd_2024 <- read_file("data/qxmd.txt")
+
+# Extract journal names using a regex pattern
+qxmd_2024 <- str_match_all(qxmd_2024, '<div class="sb0" id="[^"]*" style="">(.*?)</div>') |>
+  map(~ if (nrow(.x) > 0) .x[, 2] else character(0)) |>
+  unlist()
+
+# Create a dataframe from the vector of journal names
+qxmd_2024 <- tibble(journal_Name = qxmd_2024)
 ```
 
 ```{r}
@@ -132,6 +105,28 @@ search_scopus <- scopus_only |>
   str_c(collapse = " OR ")
 
 write_clip(content = search_scopus)
+```
+
+Filtering the hole database to only my favorite journals
+
+```{r}
+#| label: Importing the .md file from obsidian
+# Path to the Markdown file
+obsidian_file <- "/Users/helderlira/Downloads/Obsidian/heldilira/02_projetos_atuais/literatura_cientifica/literatura_cientifica.md"
+
+# Reading the file
+markdown <- readLines(obsidian_file)
+
+#Getting the Source-id of every journal
+id_table <- str_extract(markdown, "\\(\\s*\\d+\\s*\\)") |> 
+  tibble() |> 
+  drop_na() |> 
+  rename(source_id = "str_extract(markdown, \"\\\\(\\\\s*\\\\d+\\\\s*\\\\)\")") |> 
+   mutate(source_id = as.numeric(str_replace_all(source_id, "[()\\s]", "")))
+
+scopus_mylist |>
+  left_join(qxmd_2024, join_by(source_title == x1)) |>
+  View()
 ```
 
 Table Creation
