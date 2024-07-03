@@ -21,6 +21,26 @@ library(xml2)
 source(file = "qmd_to_md.r")
 ```
 
+```{r}
+usethis::use_git()
+
+## Para começar a usar o git em um projeto que não tem nenhum vinculo com git/github ainda (ou seja quero fazer versionamento de uma pasta)
+```
+
+```{r}
+usethis::use_github()
+
+# Para linkar o github com o projeto que já está sendo versionado pelo git (já tem a abinha git ativada) e aqui ele já cria um repositorio no github mesmo
+```
+
+```{r}
+usethis::git_default_branch()
+
+# pra descobrir qual a branch estamos, por default ele tá criando no master (mas como eu não estou pegando algo do github que ele cria automaticamente um 'main', agora deu certo)
+```
+
+e aparentemente eu posso alterar o default que vai ser criado aqui pelo Rstudio com uma função do usethis [Renaming the default branch (tidyverse.org)](https://www.tidyverse.org/blog/2021/10/renaming-default-branch/)
+
 ------------------------------------------------------------------------
 
 Obsidian Read and Export
