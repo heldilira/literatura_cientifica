@@ -1,0 +1,111 @@
+```{r}
+#| label: import packages
+
+library(readxl)
+library(readr)
+library(tidyverse)
+library(janitor)
+library(summarytools)
+library(DT)
+library(kableExtra)
+library(clipr)
+library(httr)
+library(rvest)
+library(xml2)
+library(usethis)
+library(gert)
+library(devtools)
+library(stringi)
+```
+
+------------------------------------------------------------------------
+
+# Scopus and Scimago
+
+```{r}
+#| label: reading Scopus and Scimago full databases then selecting and joining
+
+scopus_2023 <- read_excel("data/scopus_2023.xlsx", 
+    sheet = "Scopus Sources Oct. 2023") |> 
+  clean_names()
+
+scimago_2023 <- read_delim("data/scimagojr_2023.csv", 
+    delim = ";", escape_double = FALSE, col_types = cols(SJR = col_number()), 
+    trim_ws = TRUE) |> 
+  clean_names()
+
+# Selecting variables from scopus/scimago and joining
+scopus_select <- scopus_2023 |> 
+  select(sourcerecord_id, source_title, e_issn, print_issn, active_or_inactive, publishers_name)
+
+scimago_select <- scimago_2023 |> 
+  select(sourceid, title, sjr, sjr_best_quartile, h_index, categories, areas)
+
+# Join scopus and scimago
+scopus_scimago <- scopus_select |> 
+  dplyr::left_join(scimago_select, join_by(sourcerecord_id == sourceid))
+```
+
+# Obsidian
+
+```{r}
+#| label: Importing the .md file from obsidian and joining
+# Path to the Markdown file
+obsidian <- "/Users/helderlira/Downloads/Obsidian/heldilira/02_projetos_atuais/literatura_cientifica/journals.md"
+
+# Reading the file
+obsidian <- readLines(obsidian)
+
+#Getting the Source-id of every journal
+obsidian <- str_extract(obsidian, "\\(\\s*\\d+\\s*\\)") |> 
+  tibble() |> 
+  drop_na() |> 
+  rename(source_id = "str_extract(obsidian, \"\\\\(\\\\s*\\\\d+\\\\s*\\\\)\")") |> 
+   mutate(source_id = as.numeric(str_replace_all(source_id, "[()\\s]", ""))) |> 
+  mutate(favorite = TRUE)
+
+# Joining with the full database
+sco_sci_obs <- scopus_scimago |> 
+  left_join(obsidian, join_by(sourcerecord_id == source_id))
+```
+
+# Qxmd
+
+```{r}
+#| label: read and join qxmd 
+
+# Read the HTML file
+qxmd_2024 <- read_html("data/qxmd.html")
+
+# Extract journal names (you need to adjust the CSS selector based on your HTML structure)
+qxmd_2024 <- qxmd_2024 |> 
+  html_nodes(".sb0") |> 
+  html_text(trim = TRUE) |> 
+  as_tibble() |> 
+  rename(journal = value) |> 
+  mutate(qxmd = TRUE)
+
+# Joining Qxmd
+sco_sci_obs_qxmd <- sco_sci_obs |> 
+  left_join(qxmd_2024, join_by(source_title == journal)) |>
+  left_join(qxmd_2024, join_by(title == journal))
+
+# Count number of journals in each ocasion when the name of the title of the Journal is in Scopus (qxmd.x) and when is in Scimago (qxmd.y)
+sco_sci_obs_qxmd |> count(qxmd.x)
+sco_sci_obs_qxmd |> count(qxmd.y)
+```
+
+# Favorite Journals
+
+```{r}
+source(file = "R/extract_homepage.R")
+
+fav_journals <- sco_sci_obs_qxmd |> 
+  filter(favorite == TRUE) |> 
+  distinct(source_title, .keep_all = TRUE) |> 
+  mutate(scimago_link = str_glue("https://www.scimagojr.com/journalsearch.php?q={sourcerecord_id}&tip=sid&clean=0")) |> 
+  mutate(homepage_link = map_chr(scimago_link, extract_homepage_link, .progress = TRUE)) |> 
+  mutate(scimago_link2 = str_glue("<a href=\"{homepage_link}\"link</a>"))
+
+saveRDS(object = fav_journals, file = "data/fav_journals.RDS")
+```

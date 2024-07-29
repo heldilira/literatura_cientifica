@@ -1,0 +1,16 @@
+## Non-ASCII problem
+
+is there any way i can convert "Acta CirÃºrgica Brasileira" and other names to the right format? which is "Acta Cirúrgica Brasileira" ? i want to do this for a large vector of 30k names
+
+```{r}
+qxmd_non_ascii<- qxmd_2024 |> 
+   filter(stri_enc_isascii(journal) == FALSE)
+
+
+stringi::stri_enc_detect(str = qxmd_non_ascii$journal)
+stringi::stri_enc_toascii(str = qxmd_non_ascii$journal)
+stringi::stri_enc_mark(qxmd_non_ascii$journal)
+stringi::stri_trans_general(str = qxmd_non_ascii$journal, id = "de-ASCII")
+
+iconv(qxmd_non_ascii$journal[2], to='ASCII//TRANSLIT')
+```

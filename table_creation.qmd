@@ -1,0 +1,26 @@
+```{r}
+library(readr)
+library(tidyverse)
+library(janitor)
+library(summarytools)
+library(DT)
+library(kableExtra)
+```
+
+```{r}
+df <- read_rds(file = "data/fav_journals.RDS")
+```
+
+# Table Creation
+
+```{r}
+#| label: create a DT interactive table
+
+# This table only works in browsers as of now (2024-05-08)
+
+datatable(my_list, extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', 
+  escape = FALSE,
+  buttons = c('copy', 'csv', 'excel', 'pdf', 'print'))) |>
+  saveWidget("table.html")
+```
