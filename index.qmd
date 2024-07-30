@@ -1,0 +1,61 @@
+---
+title: "My Favourite Journals"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: import packages and data
+#| echo: false
+
+library(tidyverse)
+library(janitor)
+library(summarytools)
+library(DT)
+library(kableExtra)
+library(clipr)
+
+df <- read_rds(file = "data/fav_journals.RDS")
+```
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+You can add options to executable code like this
+
+```{r}
+kable(x = df)
+```
+
+# Qxmd Journals
+
+```{r}
+df |> 
+  filter(
+    qxmd.x == TRUE | qxmd.y == TRUE) |> 
+  select(source_title) |> 
+  clipr()
+```
+
+```{r}
+df <- read_rds(file = "data/fav_journals.RDS")
+```
+
+# Table Creation
+
+```{r}
+#| label: create a DT interactive table
+
+# This table only works in browsers as of now (2024-05-08)
+
+datatable(df, extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', 
+  escape = FALSE,
+  buttons = c('copy', 'csv', 'excel', 'pdf', 'print'))) |>
+  saveWidget("table.html")
+```

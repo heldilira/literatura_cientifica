@@ -95,9 +95,9 @@ sco_sci_obs_qxmd |> count(qxmd.x)
 sco_sci_obs_qxmd |> count(qxmd.y)
 ```
 
-# Favorite Journals
-
 ```{r}
+#| label: favorite Journals
+
 source(file = "R/extract_homepage.R")
 
 fav_journals <- sco_sci_obs_qxmd |> 
